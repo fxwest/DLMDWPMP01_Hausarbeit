@@ -12,6 +12,8 @@ database_file = 'database.db'
 # --- File Parameter
 training_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\trainExample.csv'
 training_plot_file = r'Figures\trainExamplePlot.html'
+ideal_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\idealExample.csv'
+ideal_plot_file = r'Figures\idealExamplePlot.html'
 
 
 # --- SQL GET ENGINE ---
@@ -25,7 +27,7 @@ def get_connection():
         engine = db.create_engine(url=con_str)
 
     except Exception as ex:
-        log.error("Connection could not be made due to the following error: \n", ex)
+        log.error("SQL connection could not be established due to the following error: \n", ex)
 
     else:
         log.info(f"Connection to the {database_name} SQL database created successfully.")
@@ -39,7 +41,9 @@ def main():
     """
     # try:
     engine = get_connection()  # Get the engine for the database
-    training = ds.Training(training_file_path, engine, training_plot_file)
+    training_dataset = ds.Training(training_file_path, training_plot_file, engine)
+    ideal_dataset = ds.Ideal(ideal_file_path, ideal_plot_file, engine)
+    #test_dataset =
 
 
 # except Exception as ex:
