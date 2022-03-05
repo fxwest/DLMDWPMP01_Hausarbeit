@@ -1,16 +1,48 @@
-# This is a sample Python script.
+# --- Import
+import sqlalchemy as db
+import Dataset as ds
 
-# Press Umschalt+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# --- SQL Parameter
+user = 'root'
+password = 'Python12345'
+host = '127.0.0.1'
+port = 3306
+database = 'dlmdwpmp01_hausarbeit'
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Strg+F8 to toggle the breakpoint.
+# --- SQL GET ENGINE ---
+def get_connection():
+    """
+    Connect to the local MySQL Database.
+    :return: engine object
+    """
+    con_str = f'mysql+pymysql://{user}:{password}@{host}:{port}/{database}'
+    try:
+        engine = db.create_engine(url=con_str)
+
+    except Exception as ex:
+        print("Connection could not be made due to the following error: \n", ex)
+
+    else:
+        print(f"Connection to the {host} for user {user} created successfully.")
+        return engine
 
 
-# Press the green button in the gutter to run the script.
+# --- MAIN FUNCTION ---
+def main():
+    """
+    Main function to control the whole program.
+    """
+    # try:
+    engine = get_connection()  # Get the engine for the database
+    file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\trainExample.csv'
+    training = ds.Training(file_path, engine)
+
+
+# except Exception as ex:
+#   print("The following error occurred during program execution: \n", ex)
+
+
+# --- Call main function
 if __name__ == '__main__':
-    print_hi('Felix')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    main()
