@@ -4,11 +4,12 @@ import Dataset as ds
 import logging as log
 
 # --- SQL Parameter
-user = 'root'
-password = 'Python12345'
-host = '127.0.0.1'
-port = 3306
-database = 'dlmdwpmp01_hausarbeit'
+database_name = 'dlmdwpmp01_hausarbeit'
+database_file = 'database.db'
+
+# --- File Parameter
+training_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\trainExample.csv'
+training_plot_file = r'Figures\trainExamplePlot.html'
 
 
 # --- SQL GET ENGINE ---
@@ -17,7 +18,7 @@ def get_connection():
     Connect to the local MySQL Database.
     :return: engine object
     """
-    con_str = f'mysql+pymysql://{user}:{password}@{host}:{port}/{database}'
+    con_str = f'sqlite:///{database_file}'
     try:
         engine = db.create_engine(url=con_str)
 
@@ -25,7 +26,7 @@ def get_connection():
         log.error("Connection could not be made due to the following error: \n", ex)
 
     else:
-        log.info(f"Connection to the {host} for user {user} created successfully.")
+        log.info(f"Connection to the {database_name} SQL database created successfully.")
         return engine
 
 
@@ -36,9 +37,7 @@ def main():
     """
     # try:
     engine = get_connection()  # Get the engine for the database
-    file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\trainExample.csv'
-    training_plot_file = r'Figures\trainExamplePlot.html'
-    training = ds.Training(file_path, engine, training_plot_file)
+    training = ds.Training(training_file_path, engine, training_plot_file)
 
 
 # except Exception as ex:
