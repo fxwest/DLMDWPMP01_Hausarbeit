@@ -1,5 +1,7 @@
-2022-03-05 22:37:32,110 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
-2022-03-05 22:37:32,128 - Imported data frame from SQL table trainexample
-2022-03-05 22:37:32,848 - Created Bokeh plot for Training Dataset
-2022-03-05 22:37:32,923 - Imported data frame from SQL table idealexample
-2022-03-05 22:37:39,085 - Created Bokeh plot for Ideal Dataset
+2022-03-05 22:46:40,212 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
+2022-03-05 22:46:40,221 - Imported data frame from SQL table trainexample
+2022-03-05 22:46:40,907 - Created Bokeh plot for Training Dataset
+2022-03-05 22:46:40,970 - Imported data frame from SQL table idealexample
+2022-03-05 22:46:46,150 - Created Bokeh plot for Ideal Dataset
+2022-03-05 22:46:46,164 - Imported data frame from SQL table testexample
+2022-03-05 22:46:46,609 - Created Bokeh plot for Test Dataset

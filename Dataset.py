@@ -16,20 +16,17 @@ class Dataset:
         The file path of the .csv file.
     :param plot_file:
         The path for the Bokeh output plot file.
-    :param table_name:
-        The name of the sql table.
-        This is also the name of the .csv file.
     :param engine:
         The SQL engine.
     :dataset:
         The loaded dataset.
     """
-    def __init__(self, file_path, plot_file, table_name, engine):
+    def __init__(self, file_path, plot_file, engine):
         self.file_path = file_path
         self.plot_file = plot_file
-        self.table_name = table_name
-        self.dataset = self.get_dataframe(table_name, engine, file_path)
-        self.plot_dataset(self.dataset, self.dataset_name, plot_file)
+        self.table_name = Path(file_path).stem.lower()                          # Get the file name from the file path (also name of table) in lower case
+        self.dataset = self.get_dataframe(self.table_name, engine, file_path)   # Get the dataframe from the dataset via SQL
+        self.plot_dataset(self.dataset, self.dataset_name, plot_file)           # Plot the loaded dataset
 
     def get_dataframe(self, table_name, engine, file_path):
         """
@@ -98,6 +95,8 @@ class Dataset:
         Plots the dataset via Bokeh.
         :param dataset:
             The dataset to be plotted.
+        :param dataset_name:
+            The name of the loaded dataset.
         :param plot_file:
             The path for the Bokeh output plot file.
         """
@@ -129,8 +128,7 @@ class Training(Dataset):
     """
     def __init__(self, training_file_path, training_plot_file,  engine):
         self.dataset_name = "Training Dataset"
-        self.table_name = Path(training_file_path).stem.lower()                                  # Get the file name from the file path (also name of table) in lower case
-        Dataset.__init__(self, training_file_path, training_plot_file, self.table_name, engine)  # Call init of base class
+        Dataset.__init__(self, training_file_path, training_plot_file, engine)  # Call init of base class
 
 
 # --- IDEAL DATASET CLASS ---
@@ -140,5 +138,14 @@ class Ideal(Dataset):
     """
     def __init__(self, ideal_file_path, ideal_plot_file,  engine):
         self.dataset_name = "Ideal Dataset"
-        self.table_name = Path(ideal_file_path).stem.lower()                                # Get the file name from the file path (also name of table) in lower case
-        Dataset.__init__(self, ideal_file_path, ideal_plot_file, self.table_name, engine)   # Call init of base class
+        Dataset.__init__(self, ideal_file_path, ideal_plot_file, engine)        # Call init of base class
+
+
+# --- TEST DATASET CLASS ---
+class Test(Dataset):
+    """
+    Child class of "Dataset" for the test dataset.
+    """
+    def __init__(self, test_file_path, test_plot_file,  engine):
+        self.dataset_name = "Test Dataset"
+        Dataset.__init__(self, test_file_path, test_plot_file, engine)          # Call init of base class

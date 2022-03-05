@@ -14,6 +14,8 @@ training_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_
 training_plot_file = r'Figures\trainExamplePlot.html'
 ideal_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\idealExample.csv'
 ideal_plot_file = r'Figures\idealExamplePlot.html'
+test_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\testExample.csv'
+test_plot_file = r'Figures\testExamplePlot.html'
 
 
 # --- SQL GET ENGINE ---
@@ -43,7 +45,7 @@ def main():
     engine = get_connection()  # Get the engine for the database
     training_dataset = ds.Training(training_file_path, training_plot_file, engine)
     ideal_dataset = ds.Ideal(ideal_file_path, ideal_plot_file, engine)
-    #test_dataset =
+    test_dataset = ds.Test(test_file_path, test_plot_file, engine)
 
 
 # except Exception as ex:
