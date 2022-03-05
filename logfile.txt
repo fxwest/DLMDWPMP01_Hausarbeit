@@ -1,0 +1,2 @@
+2022-03-05 21:48:49,979 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
+2022-03-05 21:48:50,003 - Imported data frame from SQL table trainexample

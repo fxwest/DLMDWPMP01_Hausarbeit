@@ -1,4 +1,6 @@
 # --- Import
+import logging
+
 import sqlalchemy as db
 import Dataset as ds
 import logging as log
@@ -46,5 +48,10 @@ def main():
 
 # --- Call main function
 if __name__ == '__main__':
-    log.basicConfig(level=log.NOTSET)
+    # Save logs into file and output via console
+    log.basicConfig(level=log.NOTSET, filename="logfile.txt", format="%(asctime)s - %(message)s", filemode="w")
+    stderrLogger = logging.StreamHandler()
+    stderrLogger.setFormatter(log.Formatter(log.BASIC_FORMAT))
+    log.getLogger().addHandler(stderrLogger)
+    # Call main function
     main()
