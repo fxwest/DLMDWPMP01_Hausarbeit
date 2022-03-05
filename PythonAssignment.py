@@ -1,6 +1,7 @@
 # --- Import
 import sqlalchemy as db
 import Dataset as ds
+import logging as log
 
 # --- SQL Parameter
 user = 'root'
@@ -21,10 +22,10 @@ def get_connection():
         engine = db.create_engine(url=con_str)
 
     except Exception as ex:
-        print("Connection could not be made due to the following error: \n", ex)
+        log.error("Connection could not be made due to the following error: \n", ex)
 
     else:
-        print(f"Connection to the {host} for user {user} created successfully.")
+        log.info(f"Connection to the {host} for user {user} created successfully.")
         return engine
 
 
@@ -36,7 +37,8 @@ def main():
     # try:
     engine = get_connection()  # Get the engine for the database
     file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\trainExample.csv'
-    training = ds.Training(file_path, engine)
+    training_plot_file = r'Figures\trainExamplePlot.html'
+    training = ds.Training(file_path, engine, training_plot_file)
 
 
 # except Exception as ex:
@@ -45,4 +47,5 @@ def main():
 
 # --- Call main function
 if __name__ == '__main__':
+    log.basicConfig(level=log.NOTSET)
     main()
