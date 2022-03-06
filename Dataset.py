@@ -378,3 +378,28 @@ class Test(Dataset):
         else:
             log.info("Determined matching functions and saved results to SQL-Database")
             print(self.matching_result)
+
+    def plot_results(self, plot_file, best_fit, ideal_dataset):
+        output_file(plot_file)                                  # Define output file
+        plot = figure(width=1000, height=800, title="Matching Functions Results", x_axis_label="X Axis", y_axis_label="Y Axis")
+
+        # Plot Testdata
+        ##plot.circle(self.dataset['x'], self.dataset['y'], size=7, alpha=0.5, legend_label="Test Data", color="black")
+
+        # Plot best fitting ideal functions
+        colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
+        for idx in range(0, len(best_fit.index)):
+            plot.line(ideal_dataset.dataset['x'], ideal_dataset.dataset[f"y{best_fit.loc[idx, 'Idx Ideal Function']}"],
+                      legend_label=f"y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
+
+        # Plot matching test data of the best fitting ideal functions
+        colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
+        for idx in range(0, len(best_fit.index)):
+            fitting_bool_array = self.matching_result[f"Match Ideal Function y{best_fit.loc[idx, 'Idx Ideal Function']}"]       # bool array for matching functions
+            x_values = self.matching_result.loc[fitting_bool_array, "Test x"]
+            y_values = self.matching_result.loc[fitting_bool_array, "Test y"]
+            plot.circle(x_values, y_values, size=7, legend_label=f"Test Data fits y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
+
+        show(plot)
+
+        # TODO: x in best fitting ideale funktion einsetzen? Zu viele test zeilen haben kein True, also keine passende funktion

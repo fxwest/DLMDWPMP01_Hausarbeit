@@ -17,6 +17,7 @@ ideal_plot_file = r'Figures\idealExamplePlot.html'
 test_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\testExample.csv'
 test_plot_file = r'Figures\testExamplePlot.html'
 best_fit_plot_file = r'Figures\bestFitExamplePlot.html'
+results_plot_file = r'Figures\resultsExamplePlot.html'
 
 
 # --- SQL GET ENGINE ---
@@ -52,6 +53,7 @@ def main():
     training_dataset.calculate_least_square(ideal_dataset, engine)
     training_dataset.select_best_fit(ideal_dataset, engine, best_fit_plot_file)
     test_dataset.get_matching_functions(training_dataset.best_fit, ideal_dataset, engine)
+    test_dataset.plot_results(results_plot_file, training_dataset.best_fit, ideal_dataset)
 
 # except Exception as ex:
 #   print("The following error occurred during program execution: \n", ex)
