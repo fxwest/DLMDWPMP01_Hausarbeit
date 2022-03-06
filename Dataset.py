@@ -272,10 +272,6 @@ class Training(Dataset):
             idx += 1
             func_train = self.dataset[f"y{idx}"].to_numpy()
             func_ideal = ideal_dataset.dataset[f"y{best_fit[1]}"].to_numpy()
-            print(f"Ideal Func:\n{func_ideal}")
-            print(f"Train Func:\n{func_train}")
-            print(f"Dev:\n{func_ideal-func_train}")
-            print(f"Abs Dev:\n{np.abs(func_ideal-func_train)}")
             max_deviation.append(np.max(np.abs(func_ideal-func_train)))
         return max_deviation
 
@@ -291,6 +287,7 @@ class Training(Dataset):
             The path for the Bokeh output plot file.
         """
         try:
+            # TODO: Hier überprüfen, ob least square ausgeführt wurde, wenn nicht -> Eigene Exception
             best_fit_list = []
             for col_train in self.least_square.iloc[:, 0:len(self.least_square.columns)]:                                                   # Iterate over yTrain-dimension (columns) of the Least Square results
                 array = self.least_square[col_train].to_numpy()                                                                             # Transform dataframe to numpy array
@@ -337,22 +334,47 @@ class Test(Dataset):
     """
     def __init__(self, test_file_path, test_plot_file,  engine):
         self.dataset_name = "Test Dataset"
+        self.matching_result = pd.DataFrame()
         Dataset.__init__(self, test_file_path, test_plot_file, engine)          # Call init of base class
 
-    def get_matching_functions(self, best_fit, ideal_dataset):
-        self.dataset = self.dataset.sort_values("x")                                           # Sort by x
-        result_list = []
-        for row_test in range(0, self.n_rows):
-            matching_functions = []
-            for row_best_fit in range(0, len(best_fit.index)):          # Iterate over rows of best fit dataframe
-                threshold_deviation = best_fit.loc[row_best_fit, "Max Deviation"] * np.sqrt(2)
-                y_test = self.dataset.loc[row_test, "y"]
-                y_ideal = ideal_dataset.dataset.loc[row_test, f"y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"]
-                deviation = np.abs(y_test - y_ideal)
-                if deviation <= threshold_deviation:
-                    matching_functions.append(True)
-                else:
-                    matching_functions.append(False)
-            result_list.append([self.dataset.loc[row_test, "x"], self.dataset.loc[row_test, "y"], matching_functions])
-        result = pd.DataFrame(result_list, columns=["Test x", "Test y", "Match Ideal Functions"])
-        print(result)
+    def get_matching_functions(self, best_fit, ideal_dataset, engine):
+        """
+        Iterate through the test dataset and check if one of the selected best fit ideal functions is below the threshold factor of sqrt(2).
+        Map the test data point to fitting functions from the best fit ideal functions dataframe.
+        :param best_fit:
+            A Pandas dataframe containing RMSE, R2, best fitting ideal function, ...
+        :param ideal_dataset:
+            The ideal dataset class.
+        :param engine:
+            The SQL engine.
+        :return:
+            Matching functions are saved in self.matching_result.
+        """
+        try:
+            # TODO: Hier überprüfen, ob best fit ausgeführt wurde, wenn nicht -> Eigene Exception
+            self.dataset = self.dataset.sort_values("x")                        # Sort test dataset by x values
+            self.dataset = self.dataset.reset_index(drop=True)                  # Reset indexes
+            self.matching_result["Test x"] = self.dataset["x"]                  # Adding Column of Test x values to result dataframe
+            self.matching_result["Test y"] = self.dataset["y"]                  # Adding Column of Test y values to result dataframe
+            for row_best_fit in range(1, len(best_fit.index)):                  # Adding empty columns for each selected ideal function
+                self.matching_result[f"Match Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = pd.NaT
+
+            for row_test in range(0, self.n_rows):                                                  # Iterate over rows of test dataset (x dim)
+                for row_best_fit in range(0, len(best_fit.index)):                                  # Iterate over rows of best fit dataframe (len=number of selected ideal functions)
+                    threshold_deviation = best_fit.loc[row_best_fit, "Max Deviation"] * np.sqrt(2)  # Calculate deviation threshold as matching criteria
+                    y_test = self.dataset.loc[row_test, "y"]                                        # Current y value from test dataset
+                    y_ideal = ideal_dataset.dataset.loc[row_test,                                   # Current y value from corresponding ideal function
+                                    f"y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"]
+                    y_deviation = np.abs(y_test - y_ideal)                                          # Calculate y deviation between both y values
+                    if y_deviation <= threshold_deviation:                                          # If matching criteria is fulfilled
+                        self.matching_result.at[row_test, f"Match Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = True
+                    else:
+                        self.matching_result.at[row_test, f"Match Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = False
+            self.matching_result.to_sql("matching_ideal_functions", engine, index=False, if_exists='replace')  # Save best fits as table in SQL-Database
+
+        except Exception as ex:
+            log.error("The following error occurred while getting matching functions for the test dataset: \n", ex)
+
+        else:
+            log.info("Determined matching functions and saved results to SQL-Database")
+            print(self.matching_result)

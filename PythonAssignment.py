@@ -51,7 +51,7 @@ def main():
     training_dataset.calculate_rsquare(ideal_dataset, engine)
     training_dataset.calculate_least_square(ideal_dataset, engine)
     training_dataset.select_best_fit(ideal_dataset, engine, best_fit_plot_file)
-    test_dataset.get_matching_functions(training_dataset.best_fit, ideal_dataset)
+    test_dataset.get_matching_functions(training_dataset.best_fit, ideal_dataset, engine)
 
 # except Exception as ex:
 #   print("The following error occurred during program execution: \n", ex)
