@@ -136,6 +136,7 @@ class Training(Dataset):
         self.dataset_name = "Training Dataset"
         self.rmse = pd.DataFrame()
         self.r2 = pd.DataFrame()
+        self.least_square = pd.DataFrame()
         self.best_fit = pd.DataFrame()
         Dataset.__init__(self, training_file_path, training_plot_file, engine)  # Call init of base class
 
@@ -202,6 +203,7 @@ class Training(Dataset):
                     for i in range(self.n_rows):                                            # Iterate over x-dimension (rows)
                         ss_tot += (y_ideal[i] - mean_y_ideal) ** 2
                         ss_res += (y_ideal[i] - y_train[i]) ** 2
+
                     r2 = 1 - (ss_res/ss_tot)                                                # R-squared value
                     r2_list.append(r2)                                                      # Add r2 value of current ideal set to r2 list
                 self.r2[f"Train {col_train}"] = r2_list                                     # Add r2 list of current train set to r2 dataframe
@@ -217,6 +219,41 @@ class Training(Dataset):
 
         else:
             log.info("Calculated R2 between Training and Ideal Dataset and saved to SQL-Database")
+            print(self.r2)
+
+    def calculate_least_square(self, ideal_dataset, engine):
+        """
+        Calculate the squared difference sum between the Ideal and Training Dataset.
+        Results are stored in a Pandas Dataframe called least square.
+        :param ideal_dataset:
+            The ideal dataset class.
+        :param engine:
+            The SQL engine.
+        """
+        try:
+            if self.n_rows != ideal_dataset.n_rows:
+                raise RowCountMismatchError
+
+            for col_train in self.dataset.iloc[:, 1:self.n_cols]:                                               # Iterate over y-dimension (columns) of the train dataset
+                y_train = self.dataset[col_train]                                                               # Select current y value from train dataset
+                sum_of_squares_list = []
+                for col_ideal in ideal_dataset.dataset.iloc[:, 1:ideal_dataset.n_cols]:                         # Iterate over y-dimension (columns) of the ideal dataset
+                    y_ideal = ideal_dataset.dataset[col_ideal]                                                  # Select current y value from ideal dataset
+                    sum_of_squares = ((y_ideal - y_train) ** 2).sum()                                           # Calculate the sum of the squared difference between ideal and train dataset
+                    sum_of_squares_list.append(sum_of_squares)
+                self.least_square[f"Train {col_train}"] = sum_of_squares_list                                   # Add sum of squares list of current train set to least_square dataframe
+            self.least_square.index.name = "Ideal Function"                                                     # Change name of dataframe index
+            self.least_square.index += 1                                                                        # Index start from 1
+            self.least_square.to_sql("sum_of_squares_train_ideal", engine, index=False, if_exists='replace')    # Save least_square as table in SQL-Database
+
+        except RowCountMismatchError:                                                       # TODO Unit-Test
+            log.error(RowCountMismatchError().error_msg)
+
+        except Exception as ex:
+            log.error("The following error occurred while calculating the Least Square Value: \n", ex)
+
+        else:
+            log.info("Calculated Least Square between Training and Ideal Dataset and saved to SQL-Database")
             print(self.r2)
 
     def calculate_max_deviation(self, best_fit_list, ideal_dataset):
@@ -235,13 +272,17 @@ class Training(Dataset):
             idx += 1
             func_train = self.dataset[f"y{idx}"].to_numpy()
             func_ideal = ideal_dataset.dataset[f"y{best_fit[1]}"].to_numpy()
+            print(f"Ideal Func:\n{func_ideal}")
+            print(f"Train Func:\n{func_train}")
+            print(f"Dev:\n{func_ideal-func_train}")
+            print(f"Abs Dev:\n{np.abs(func_ideal-func_train)}")
             max_deviation.append(np.max(np.abs(func_ideal-func_train)))
         return max_deviation
 
     def select_best_fit(self, ideal_dataset, engine, plot_file):
         """
         Find the best fitting function from the Ideal Dataset for each Training Dataset.
-        The best fitting function is the function with the lowest R-Squared Value.
+        The best fitting function is the function with the lowest Least Square Value.
         :param ideal_dataset:
             The ideal dataset class.
         :param engine:
@@ -251,12 +292,14 @@ class Training(Dataset):
         """
         try:
             best_fit_list = []
-            for col_train in self.r2.iloc[:, 0:len(self.r2.columns)]:                                                                       # Iterate over yTrain-dimension (columns) of the r2 results
-                array = self.r2[col_train].to_numpy()                                                                                       # Transform dataframe to numpy array
-                min_r2_idx = np.argmin(np.abs(array))+1                                                                                     # Get idx of min value (idx starts from 1)
-                best_fit_list.append([col_train, min_r2_idx, self.rmse.loc[min_r2_idx, col_train], self.r2.loc[min_r2_idx, col_train]])     # Save best fit to list
+            for col_train in self.least_square.iloc[:, 0:len(self.least_square.columns)]:                                                   # Iterate over yTrain-dimension (columns) of the Least Square results
+                array = self.least_square[col_train].to_numpy()                                                                             # Transform dataframe to numpy array
+                min_least_square_idx = np.argmin(np.abs(array))+1                                                                           # Get idx of min value (idx starts from 1)
+                best_fit_list.append([col_train, min_least_square_idx, self.rmse.loc[min_least_square_idx, col_train],
+                                      self.r2.loc[min_least_square_idx, col_train],
+                                      self.least_square.loc[min_least_square_idx, col_train]])                                              # Save best fit to list
             max_deviation = self.calculate_max_deviation(best_fit_list, ideal_dataset)                                                      # Calculate max deviation between ideal function and train dataset
-            self.best_fit = pd.DataFrame(best_fit_list, columns=["Train Dataset", "Idx Ideal Function", "RMSE", "R2"])                      # Save best fits to Pandas dataframe
+            self.best_fit = pd.DataFrame(best_fit_list, columns=["Train Dataset", "Idx Ideal Function", "RMSE", "R2", "Least Square"])      # Save best fits to Pandas dataframe
             self.best_fit["Max Deviation"] = max_deviation                                                                                  # Add max deviations to the dataframe
             self.best_fit.to_sql("best_fit_train_ideal", engine, index=False, if_exists='replace')                                          # Save best fits as table in SQL-Database
 
@@ -266,7 +309,7 @@ class Training(Dataset):
             plot = figure(width=1000, height=800, title="Best fitting Ideal Functions (Train vs. Ideal)",
                           x_axis_label="X Axis", y_axis_label="Y Axis")
             for best_fit in best_fit_list:
-                plot.circle(ideal_dataset.dataset['x'], ideal_dataset.dataset[f"y{best_fit[1]}"], size=7, alpha=0.5, legend_label=f"y{best_fit[1]}", color=next(colors))
+                plot.line(ideal_dataset.dataset['x'], ideal_dataset.dataset[f"y{best_fit[1]}"], legend_label=f"y{best_fit[1]}", color=next(colors))
             show(plot)
 
         except Exception as ex:
