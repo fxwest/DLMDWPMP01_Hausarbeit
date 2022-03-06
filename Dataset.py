@@ -219,12 +219,35 @@ class Training(Dataset):
             log.info("Calculated R2 between Training and Ideal Dataset and saved to SQL-Database")
             print(self.r2)
 
+    def calculate_max_deviation(self, best_fit_list, ideal_dataset):
+        """
+        Calculate the max abs deviation between each selected ideal function and the training dataset.
+        :param best_fit_list:
+            A list to create the Pandas dataframe containing RMSE, R2, ...
+        :param ideal_dataset:
+            The ideal dataset class.
+        :return:
+            Returns a list of the maximum absolute deviations.
+        """
+        max_deviation = []
+        idx = 0
+        for best_fit in best_fit_list:
+            idx += 1
+            func_train = self.dataset[f"y{idx}"].to_numpy()
+            func_ideal = ideal_dataset.dataset[f"y{best_fit[1]}"].to_numpy()
+            max_deviation.append(np.max(np.abs(func_ideal-func_train)))
+        return max_deviation
+
     def select_best_fit(self, ideal_dataset, engine, plot_file):
         """
         Find the best fitting function from the Ideal Dataset for each Training Dataset.
         The best fitting function is the function with the lowest R-Squared Value.
+        :param ideal_dataset:
+            The ideal dataset class.
         :param engine:
             The SQL engine.
+        :param plot_file:
+            The path for the Bokeh output plot file.
         """
         try:
             best_fit_list = []
@@ -232,12 +255,14 @@ class Training(Dataset):
                 array = self.r2[col_train].to_numpy()                                                                                       # Transform dataframe to numpy array
                 min_r2_idx = np.argmin(np.abs(array))+1                                                                                     # Get idx of min value (idx starts from 1)
                 best_fit_list.append([col_train, min_r2_idx, self.rmse.loc[min_r2_idx, col_train], self.r2.loc[min_r2_idx, col_train]])     # Save best fit to list
+            max_deviation = self.calculate_max_deviation(best_fit_list, ideal_dataset)                                                      # Calculate max deviation between ideal function and train dataset
             self.best_fit = pd.DataFrame(best_fit_list, columns=["Train Dataset", "Idx Ideal Function", "RMSE", "R2"])                      # Save best fits to Pandas dataframe
+            self.best_fit["Max Deviation"] = max_deviation                                                                                  # Add max deviations to the dataframe
             self.best_fit.to_sql("best_fit_train_ideal", engine, index=False, if_exists='replace')                                          # Save best fits as table in SQL-Database
 
             # Plot best fitting ideal functions
-            output_file(plot_file)                                              # Define output file
-            colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
+            output_file(plot_file)                                                                                                          # Define output file
+            colors = itertools.cycle(bokeh.palettes.Category20_20)                                                                          # Get endless color iterator
             plot = figure(width=1000, height=800, title="Best fitting Ideal Functions (Train vs. Ideal)",
                           x_axis_label="X Axis", y_axis_label="Y Axis")
             for best_fit in best_fit_list:
@@ -270,3 +295,21 @@ class Test(Dataset):
     def __init__(self, test_file_path, test_plot_file,  engine):
         self.dataset_name = "Test Dataset"
         Dataset.__init__(self, test_file_path, test_plot_file, engine)          # Call init of base class
+
+    def get_matching_functions(self, best_fit, ideal_dataset):
+        self.dataset = self.dataset.sort_values("x")                                           # Sort by x
+        result_list = []
+        for row_test in range(0, self.n_rows):
+            matching_functions = []
+            for row_best_fit in range(0, len(best_fit.index)):          # Iterate over rows of best fit dataframe
+                threshold_deviation = best_fit.loc[row_best_fit, "Max Deviation"] * np.sqrt(2)
+                y_test = self.dataset.loc[row_test, "y"]
+                y_ideal = ideal_dataset.dataset.loc[row_test, f"y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"]
+                deviation = np.abs(y_test - y_ideal)
+                if deviation <= threshold_deviation:
+                    matching_functions.append(True)
+                else:
+                    matching_functions.append(False)
+            result_list.append([self.dataset.loc[row_test, "x"], self.dataset.loc[row_test, "y"], matching_functions])
+        result = pd.DataFrame(result_list, columns=["Test x", "Test y", "Match Ideal Functions"])
+        print(result)
