@@ -1,10 +1,11 @@
-2022-03-06 13:09:18,704 - Started Python Assignment...
-2022-03-06 13:09:18,721 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
-2022-03-06 13:09:18,746 - Imported data frame from SQL table trainexample
-2022-03-06 13:09:19,465 - Created Bokeh plot for Training Dataset
-2022-03-06 13:09:19,527 - Imported data frame from SQL table idealexample
-2022-03-06 13:09:25,987 - Created Bokeh plot for Ideal Dataset
-2022-03-06 13:09:26,004 - Imported data frame from SQL table testexample
-2022-03-06 13:09:26,538 - Created Bokeh plot for Test Dataset
-2022-03-06 13:09:28,498 - Calculated RMSE between Training and Ideal Dataset
-2022-03-06 13:09:30,105 - Calculated R2 between Training and Ideal Dataset
+2022-03-06 15:28:12,246 - Started Python Assignment...
+2022-03-06 15:28:12,297 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
+2022-03-06 15:28:12,313 - Imported data frame from SQL table trainexample
+2022-03-06 15:28:13,163 - Created Bokeh plot for Training Dataset
+2022-03-06 15:28:13,213 - Imported data frame from SQL table idealexample
+2022-03-06 15:28:21,501 - Created Bokeh plot for Ideal Dataset
+2022-03-06 15:28:21,513 - Imported data frame from SQL table testexample
+2022-03-06 15:28:22,016 - Created Bokeh plot for Test Dataset
+2022-03-06 15:28:24,411 - Calculated RMSE between Training and Ideal Dataset and saved to SQL-Database
+2022-03-06 15:28:26,095 - Calculated R2 between Training and Ideal Dataset and saved to SQL-Database
+2022-03-06 15:28:26,730 - Selected and plotted the best fitting functions and saved to SQL-Database

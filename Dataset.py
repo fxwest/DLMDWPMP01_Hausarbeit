@@ -103,6 +103,8 @@ class Dataset:
             The name of the loaded dataset.
         :param plot_file:
             The path for the Bokeh output plot file.
+        :param n_cols:
+            Number of columns of the current dataset.
         """
         try:
             folder = pathlib.PurePath(plot_file).parent.name                    # Get folder from path
@@ -134,14 +136,17 @@ class Training(Dataset):
         self.dataset_name = "Training Dataset"
         self.rmse = pd.DataFrame()
         self.r2 = pd.DataFrame()
+        self.best_fit = pd.DataFrame()
         Dataset.__init__(self, training_file_path, training_plot_file, engine)  # Call init of base class
 
-    def calculate_rmse(self, ideal_dataset):
+    def calculate_rmse(self, ideal_dataset, engine):
         """
         Calculate the Root Mean Squared Error between the Ideal and Training Dataset.
         Results are stored in a Pandas Dataframe called rmse.
         :param ideal_dataset:
             The ideal dataset class.
+        :param engine:
+            The SQL engine.
         """
         try:
             if self.n_rows != ideal_dataset.n_rows:
@@ -160,6 +165,7 @@ class Training(Dataset):
                 self.rmse[f"Train {col_train}"] = rmse_list                                 # Add rmse list of current train set to rmse dataframe
             self.rmse.index.name = "Ideal Function"                                         # Change name of dataframe index
             self.rmse.index += 1                                                            # Index start from 1
+            self.rmse.to_sql("rmse_train_ideal", engine, index=False, if_exists='replace')  # Save rmse as table in SQL-Database
 
         except RowCountMismatchError:                                                       # TODO Unit-Test
             log.error(RowCountMismatchError().error_msg)
@@ -168,16 +174,18 @@ class Training(Dataset):
             log.error("The following error occurred while calculating the RMSE: \n", ex)
 
         else:
-            log.info("Calculated RMSE between Training and Ideal Dataset")
+            log.info("Calculated RMSE between Training and Ideal Dataset and saved to SQL-Database")
             print(self.rmse)
 
-    def calculate_rsquare(self, ideal_dataset):
+    def calculate_rsquare(self, ideal_dataset, engine):
         """
         Calculate the R-Squared Value between the Ideal and Training Dataset.
         Results are stored in a Pandas Dataframe called r2.
         This value shows how close the ideal data is to the training data.
         :param ideal_dataset:
             The ideal dataset class.
+        :param engine:
+            The SQL engine.
         """
         try:
             if self.n_rows != ideal_dataset.n_rows:
@@ -199,6 +207,7 @@ class Training(Dataset):
                 self.r2[f"Train {col_train}"] = r2_list                                     # Add r2 list of current train set to r2 dataframe
             self.r2.index.name = "Ideal Function"                                           # Change name of dataframe index
             self.r2.index += 1                                                              # Index start from 1
+            self.r2.to_sql("r2_train_ideal", engine, index=False, if_exists='replace')      # Save r2 as table in SQL-Database
 
         except RowCountMismatchError:                                                       # TODO Unit-Test
             log.error(RowCountMismatchError().error_msg)
@@ -207,8 +216,40 @@ class Training(Dataset):
             log.error("The following error occurred while calculating the R-Squared Value: \n", ex)
 
         else:
-            log.info("Calculated R2 between Training and Ideal Dataset")
+            log.info("Calculated R2 between Training and Ideal Dataset and saved to SQL-Database")
             print(self.r2)
+
+    def select_best_fit(self, ideal_dataset, engine, plot_file):
+        """
+        Find the best fitting function from the Ideal Dataset for each Training Dataset.
+        The best fitting function is the function with the lowest R-Squared Value.
+        :param engine:
+            The SQL engine.
+        """
+        try:
+            best_fit_list = []
+            for col_train in self.r2.iloc[:, 0:len(self.r2.columns)]:                                                                       # Iterate over yTrain-dimension (columns) of the r2 results
+                array = self.r2[col_train].to_numpy()                                                                                       # Transform dataframe to numpy array
+                min_r2_idx = np.argmin(np.abs(array))+1                                                                                     # Get idx of min value (idx starts from 1)
+                best_fit_list.append([col_train, min_r2_idx, self.rmse.loc[min_r2_idx, col_train], self.r2.loc[min_r2_idx, col_train]])     # Save best fit to list
+            self.best_fit = pd.DataFrame(best_fit_list, columns=["Train Dataset", "Idx Ideal Function", "RMSE", "R2"])                      # Save best fits to Pandas dataframe
+            self.best_fit.to_sql("best_fit_train_ideal", engine, index=False, if_exists='replace')                                          # Save best fits as table in SQL-Database
+
+            # Plot best fitting ideal functions
+            output_file(plot_file)                                              # Define output file
+            colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
+            plot = figure(width=1000, height=800, title="Best fitting Ideal Functions (Train vs. Ideal)",
+                          x_axis_label="X Axis", y_axis_label="Y Axis")
+            for best_fit in best_fit_list:
+                plot.circle(ideal_dataset.dataset['x'], ideal_dataset.dataset[f"y{best_fit[1]}"], size=7, alpha=0.5, legend_label=f"y{best_fit[1]}", color=next(colors))
+            show(plot)
+
+        except Exception as ex:
+            log.error("The following error occurred while finding the best fitting functions: \n", ex)
+
+        else:
+            log.info("Selected and plotted the best fitting functions and saved to SQL-Database")
+            print(self.best_fit)
 
 
 # --- IDEAL DATASET CLASS ---

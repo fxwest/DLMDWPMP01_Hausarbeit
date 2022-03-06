@@ -16,6 +16,7 @@ ideal_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Pyt
 ideal_plot_file = r'Figures\idealExamplePlot.html'
 test_file_path = r'C:\Users\felix\OneDrive\Studium\3_Master\1_IU\2_Module\0_Python\3_Hausarbeit\DLMDWPMP01_Hausarbeit\Datasets\ExampleDatasets\testExample.csv'
 test_plot_file = r'Figures\testExamplePlot.html'
+best_fit_plot_file = r'Figures\bestFitExamplePlot.html'
 
 
 # --- SQL GET ENGINE ---
@@ -46,8 +47,9 @@ def main():
     training_dataset = ds.Training(training_file_path, training_plot_file, engine)
     ideal_dataset = ds.Ideal(ideal_file_path, ideal_plot_file, engine)
     test_dataset = ds.Test(test_file_path, test_plot_file, engine)
-    training_dataset.calculate_rmse(ideal_dataset)
-    training_dataset.calculate_rsquare(ideal_dataset)
+    training_dataset.calculate_rmse(ideal_dataset, engine)
+    training_dataset.calculate_rsquare(ideal_dataset, engine)
+    training_dataset.select_best_fit(ideal_dataset, engine, best_fit_plot_file)
 
 # except Exception as ex:
 #   print("The following error occurred during program execution: \n", ex)
