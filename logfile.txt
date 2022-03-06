@@ -1,13 +1,13 @@
-2022-03-06 20:45:41,445 - Started Python Assignment...
-2022-03-06 20:45:41,495 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
-2022-03-06 20:45:41,555 - Imported data frame from SQL table trainexample
-2022-03-06 20:45:42,462 - Created Bokeh plot for Training Dataset
-2022-03-06 20:45:42,569 - Imported data frame from SQL table idealexample
-2022-03-06 20:45:49,878 - Created Bokeh plot for Ideal Dataset
-2022-03-06 20:45:49,895 - Imported data frame from SQL table testexample
-2022-03-06 20:45:50,479 - Created Bokeh plot for Test Dataset
-2022-03-06 20:45:52,349 - Calculated RMSE between Training and Ideal Dataset and saved to SQL-Database
-2022-03-06 20:45:54,271 - Calculated R2 between Training and Ideal Dataset and saved to SQL-Database
-2022-03-06 20:45:54,540 - Calculated Least Square between Training and Ideal Dataset and saved to SQL-Database
-2022-03-06 20:45:55,142 - Selected and plotted the best fitting functions and saved to SQL-Database
-2022-03-06 20:45:55,467 - Determined matching functions and saved results to SQL-Database
+2022-03-06 22:20:56,486 - Started Python Assignment...
+2022-03-06 22:20:56,522 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
+2022-03-06 22:20:56,553 - Imported data frame from SQL table trainexample
+2022-03-06 22:20:57,289 - Created Bokeh plot for Training Dataset
+2022-03-06 22:20:57,354 - Imported data frame from SQL table idealexample
+2022-03-06 22:21:04,455 - Created Bokeh plot for Ideal Dataset
+2022-03-06 22:21:04,472 - Imported data frame from SQL table testexample
+2022-03-06 22:21:05,010 - Created Bokeh plot for Test Dataset
+2022-03-06 22:21:06,899 - Calculated RMSE between Training and Ideal Dataset and saved to SQL-Database
+2022-03-06 22:21:08,325 - Calculated R2 between Training and Ideal Dataset and saved to SQL-Database
+2022-03-06 22:21:08,505 - Calculated Least Square between Training and Ideal Dataset and saved to SQL-Database
+2022-03-06 22:21:08,922 - Selected and plotted the best fitting functions and saved to SQL-Database
+2022-03-06 22:21:09,377 - Determined matching functions and saved results to SQL-Database

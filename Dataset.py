@@ -358,18 +358,25 @@ class Test(Dataset):
             self.matching_result["Test y"] = self.dataset["y"]                  # Adding Column of Test y values to result dataframe
             for row_best_fit in range(1, len(best_fit.index)):                  # Adding empty columns for each selected ideal function
                 self.matching_result[f"Match Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = pd.NaT
+                self.matching_result[f"Threshold Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = pd.NaT
+                self.matching_result[f"Deviation Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = pd.NaT
 
-            for row_test in range(0, self.n_rows):                                                  # Iterate over rows of test dataset (x dim)
-                for row_best_fit in range(0, len(best_fit.index)):                                  # Iterate over rows of best fit dataframe (len=number of selected ideal functions)
-                    threshold_deviation = best_fit.loc[row_best_fit, "Max Deviation"] * np.sqrt(2)  # Calculate deviation threshold as matching criteria
-                    y_test = self.dataset.loc[row_test, "y"]                                        # Current y value from test dataset
-                    y_ideal = ideal_dataset.dataset.loc[row_test,                                   # Current y value from corresponding ideal function
+            for row_test in range(0, self.n_rows):                                                          # Iterate over rows of test dataset (x dim)
+                x_test = self.dataset.loc[row_test, "x"]                                                    # Current x value from test dataset
+                row_ideal = ideal_dataset.dataset.loc[ideal_dataset.dataset["x"] == x_test].index[0]        # Get idx of ideal dataset for x_test
+                for row_best_fit in range(0, len(best_fit.index)):                                          # Iterate over rows of best fit dataframe (len=number of selected ideal functions)
+                    threshold_deviation = best_fit.loc[row_best_fit, "Max Deviation"] * np.sqrt(2)          # Calculate deviation threshold as matching criteria
+                    self.matching_result.at[row_test, f"Threshold Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = threshold_deviation
+                    y_test = self.dataset.loc[row_test, "y"]                                                # Current y value from test dataset
+                    y_ideal = ideal_dataset.dataset.loc[row_ideal,                                          # Current y value from corresponding ideal function
                                     f"y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"]
-                    y_deviation = np.abs(y_test - y_ideal)                                          # Calculate y deviation between both y values
-                    if y_deviation <= threshold_deviation:                                          # If matching criteria is fulfilled
+                    y_deviation = np.abs(y_test - y_ideal)                                                  # Calculate y deviation between both y values
+                    if y_deviation <= threshold_deviation:                                                  # If matching criteria is fulfilled
                         self.matching_result.at[row_test, f"Match Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = True
+                        self.matching_result.at[row_test, f"Deviation Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = y_deviation
                     else:
                         self.matching_result.at[row_test, f"Match Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = False
+                        self.matching_result.at[row_test, f"Deviation Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = y_deviation
             self.matching_result.to_sql("matching_ideal_functions", engine, index=False, if_exists='replace')  # Save best fits as table in SQL-Database
 
         except Exception as ex:
@@ -380,11 +387,20 @@ class Test(Dataset):
             print(self.matching_result)
 
     def plot_results(self, plot_file, best_fit, ideal_dataset):
+        """
+        Plot the results.
+        :param plot_file:
+            The path for the Bokeh output plot file.
+        :param best_fit:
+            A Pandas dataframe containing RMSE, R2, best fitting ideal function, ...
+        :param ideal_dataset:
+            The ideal dataset class.
+        """
         output_file(plot_file)                                  # Define output file
         plot = figure(width=1000, height=800, title="Matching Functions Results", x_axis_label="X Axis", y_axis_label="Y Axis")
 
         # Plot Testdata
-        ##plot.circle(self.dataset['x'], self.dataset['y'], size=7, alpha=0.5, legend_label="Test Data", color="black")
+        plot.circle(self.dataset['x'], self.dataset['y'], size=5, alpha=0.5, legend_label="Test Data", color="black")
 
         # Plot best fitting ideal functions
         colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
@@ -401,5 +417,3 @@ class Test(Dataset):
             plot.circle(x_values, y_values, size=7, legend_label=f"Test Data fits y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
 
         show(plot)
-
-        # TODO: x in best fitting ideale funktion einsetzen? Zu viele test zeilen haben kein True, also keine passende funktion
