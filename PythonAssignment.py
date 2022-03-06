@@ -46,7 +46,8 @@ def main():
     training_dataset = ds.Training(training_file_path, training_plot_file, engine)
     ideal_dataset = ds.Ideal(ideal_file_path, ideal_plot_file, engine)
     test_dataset = ds.Test(test_file_path, test_plot_file, engine)
-
+    training_dataset.calculate_rmse(ideal_dataset)
+    training_dataset.calculate_rsquare(ideal_dataset)
 
 # except Exception as ex:
 #   print("The following error occurred during program execution: \n", ex)
@@ -59,5 +60,6 @@ if __name__ == '__main__':
     stderrLogger = logging.StreamHandler()
     stderrLogger.setFormatter(log.Formatter(log.BASIC_FORMAT))
     log.getLogger().addHandler(stderrLogger)
+    log.info("Started Python Assignment...")
     # Call main function
     main()

@@ -3,9 +3,11 @@ import pathlib
 import bokeh.palettes
 import pandas as pd
 import logging as log
+import numpy as np
 import itertools
 from pathlib import Path
 from bokeh.plotting import figure, output_file, show
+from Exceptions import RowCountMismatchError
 
 
 # --- DATASET BASE CLASS ---
@@ -24,9 +26,11 @@ class Dataset:
     def __init__(self, file_path, plot_file, engine):
         self.file_path = file_path
         self.plot_file = plot_file
-        self.table_name = Path(file_path).stem.lower()                          # Get the file name from the file path (also name of table) in lower case
-        self.dataset = self.get_dataframe(self.table_name, engine, file_path)   # Get the dataframe from the dataset via SQL
-        self.plot_dataset(self.dataset, self.dataset_name, plot_file)           # Plot the loaded dataset
+        self.table_name = Path(file_path).stem.lower()                              # Get the file name from the file path (also name of table) in lower case
+        self.dataset = self.get_dataframe(self.table_name, engine, file_path)       # Get the dataframe from the dataset via SQL
+        self.n_rows = len(self.dataset.index)                                       # Number of rows
+        self.n_cols = len(self.dataset.columns)                                     # Number of columns
+        self.plot_dataset(self.dataset, self.dataset_name, plot_file, self.n_cols)  # Plot the loaded dataset
 
     def get_dataframe(self, table_name, engine, file_path):
         """
@@ -90,7 +94,7 @@ class Dataset:
             print(csv_dataset)
             return csv_dataset
 
-    def plot_dataset(self, dataset, dataset_name, plot_file):
+    def plot_dataset(self, dataset, dataset_name, plot_file, n_cols):
         """
         Plots the dataset via Bokeh.
         :param dataset:
@@ -110,7 +114,7 @@ class Dataset:
             colors = itertools.cycle(bokeh.palettes.Category20_20)              # Get endless color iterator
             plot = figure(width=1000, height=800, title=dataset_name,           # Create figures
                           x_axis_label="X Axis", y_axis_label="Y Axis")
-            for y_values in dataset.iloc[:, 1:len(dataset.columns)]:
+            for y_values in dataset.iloc[:, 1:n_cols]:
                 plot.circle(dataset['x'], dataset[y_values], size=7, alpha=0.5, legend_label=y_values, color=next(colors))
             show(plot)
 
@@ -128,7 +132,83 @@ class Training(Dataset):
     """
     def __init__(self, training_file_path, training_plot_file,  engine):
         self.dataset_name = "Training Dataset"
+        self.rmse = pd.DataFrame()
+        self.r2 = pd.DataFrame()
         Dataset.__init__(self, training_file_path, training_plot_file, engine)  # Call init of base class
+
+    def calculate_rmse(self, ideal_dataset):
+        """
+        Calculate the Root Mean Squared Error between the Ideal and Training Dataset.
+        Results are stored in a Pandas Dataframe called rmse.
+        :param ideal_dataset:
+            The ideal dataset class.
+        """
+        try:
+            if self.n_rows != ideal_dataset.n_rows:
+                raise RowCountMismatchError
+
+            for col_train in self.dataset.iloc[:, 1:self.n_cols]:                           # Iterate over y-dimension (columns) of the train dataset
+                y_train = self.dataset[col_train]                                           # Select current y value from train dataset
+                rmse_list = []
+                for col_ideal in ideal_dataset.dataset.iloc[:, 1:ideal_dataset.n_cols]:     # Iterate over y-dimension (columns) of the ideal dataset
+                    y_ideal = ideal_dataset.dataset[col_ideal]                              # Select current y value from ideal dataset
+                    rmse = 0
+                    for i in range(self.n_rows):                                            # Iterate over x-dimension (rows)
+                        rmse += (y_ideal[i] - y_train[i]) ** 2                              # Squared error between ideal and train y value
+                    rmse = np.sqrt(rmse/self.n_rows)                                        # Root Mean Squares Error
+                    rmse_list.append(rmse)                                                  # Add rmse value of current ideal set to rmse list
+                self.rmse[f"Train {col_train}"] = rmse_list                                 # Add rmse list of current train set to rmse dataframe
+            self.rmse.index.name = "Ideal Function"                                         # Change name of dataframe index
+            self.rmse.index += 1                                                            # Index start from 1
+
+        except RowCountMismatchError:                                                       # TODO Unit-Test
+            log.error(RowCountMismatchError().error_msg)
+
+        except Exception as ex:
+            log.error("The following error occurred while calculating the RMSE: \n", ex)
+
+        else:
+            log.info("Calculated RMSE between Training and Ideal Dataset")
+            print(self.rmse)
+
+    def calculate_rsquare(self, ideal_dataset):
+        """
+        Calculate the R-Squared Value between the Ideal and Training Dataset.
+        Results are stored in a Pandas Dataframe called r2.
+        This value shows how close the ideal data is to the training data.
+        :param ideal_dataset:
+            The ideal dataset class.
+        """
+        try:
+            if self.n_rows != ideal_dataset.n_rows:
+                raise RowCountMismatchError
+
+            for col_train in self.dataset.iloc[:, 1:self.n_cols]:                           # Iterate over y-dimension (columns) of the train dataset
+                y_train = self.dataset[col_train]                                           # Select current y value from train dataset
+                r2_list = []
+                for col_ideal in ideal_dataset.dataset.iloc[:, 1:ideal_dataset.n_cols]:     # Iterate over y-dimension (columns) of the ideal dataset
+                    y_ideal = ideal_dataset.dataset[col_ideal]                              # Select current y value from ideal dataset
+                    mean_y_ideal = np.mean(y_ideal)                                         # Y-Mean of the current ideal function
+                    ss_tot = 0                                                              # Total sum of squares
+                    ss_res = 0                                                              # Total sum of squares of residuals
+                    for i in range(self.n_rows):                                            # Iterate over x-dimension (rows)
+                        ss_tot += (y_ideal[i] - mean_y_ideal) ** 2
+                        ss_res += (y_ideal[i] - y_train[i]) ** 2
+                    r2 = 1 - (ss_res/ss_tot)                                                # R-squared value
+                    r2_list.append(r2)                                                      # Add r2 value of current ideal set to r2 list
+                self.r2[f"Train {col_train}"] = r2_list                                     # Add r2 list of current train set to r2 dataframe
+            self.r2.index.name = "Ideal Function"                                           # Change name of dataframe index
+            self.r2.index += 1                                                              # Index start from 1
+
+        except RowCountMismatchError:                                                       # TODO Unit-Test
+            log.error(RowCountMismatchError().error_msg)
+
+        except Exception as ex:
+            log.error("The following error occurred while calculating the R-Squared Value: \n", ex)
+
+        else:
+            log.info("Calculated R2 between Training and Ideal Dataset")
+            print(self.r2)
 
 
 # --- IDEAL DATASET CLASS ---
