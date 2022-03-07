@@ -1,14 +1,23 @@
-2022-03-07 20:40:27,204 - Started Python Assignment...
-2022-03-07 20:40:27,252 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
-2022-03-07 20:40:27,272 - Imported data frame from SQL table trainexample
-2022-03-07 20:40:27,963 - Created Bokeh plot for Training Dataset
-2022-03-07 20:40:28,031 - Imported data frame from SQL table idealexample
-2022-03-07 20:40:33,997 - Created Bokeh plot for Ideal Dataset
-2022-03-07 20:40:34,013 - Imported data frame from SQL table testexample
-2022-03-07 20:40:34,591 - Created Bokeh plot for Test Dataset
-2022-03-07 20:40:36,757 - Calculated RMSE between Training and Ideal Dataset and saved to SQL-Database
-2022-03-07 20:40:38,230 - Calculated R2 between Training and Ideal Dataset and saved to SQL-Database
-2022-03-07 20:40:38,408 - Calculated Least Square between Training and Ideal Dataset and saved to SQL-Database
-2022-03-07 20:40:38,833 - Selected and plotted the best fitting functions and saved to SQL-Database
-2022-03-07 20:40:39,371 - Determined matching functions and saved results to SQL-Database
-2022-03-07 20:40:39,632 - Extracted result and saved them to the SQL-Database
+2022-03-07 21:26:50,728 - Started Python Assignment...
+2022-03-07 21:26:50,775 - Connection to the dlmdwpmp01_hausarbeit SQL database created successfully.
+2022-03-07 21:26:50,775 - Table trainexample already exists, overwriting.
+2022-03-07 21:26:50,790 - Loaded the csv file successfully from Datasets\ExampleDatasets\trainExample.csv
+2022-03-07 21:26:50,916 - Imported data frame from SQL table trainexample
+2022-03-07 21:26:51,766 - Created Bokeh plot for Training Dataset
+2022-03-07 21:26:51,766 - Table idealexample already exists, overwriting.
+2022-03-07 21:26:51,858 - Loaded the csv file successfully from Datasets\ExampleDatasets\idealExample.csv
+2022-03-07 21:26:52,684 - Imported data frame from SQL table idealexample
+2022-03-07 21:27:00,298 - Created Bokeh plot for Ideal Dataset
+2022-03-07 21:27:00,302 - Table testexample already exists, overwriting.
+2022-03-07 21:27:00,302 - Loaded the csv file successfully from Datasets\ExampleDatasets\testExample.csv
+2022-03-07 21:27:00,648 - Imported data frame from SQL table testexample
+2022-03-07 21:27:01,066 - Created Bokeh plot for Test Dataset
+2022-03-07 21:27:02,983 - Calculated RMSE between Training and Ideal Dataset and saved to SQL-Database
+2022-03-07 21:27:04,693 - Calculated R2 between Training and Ideal Dataset and saved to SQL-Database
+2022-03-07 21:27:04,856 - Calculated Least Square between Training and Ideal Dataset and saved to SQL-Database
+2022-03-07 21:27:05,332 - Selected and plotted the best fitting functions and saved to SQL-Database
+2022-03-07 21:27:05,924 - Determined matching functions and saved results to SQL-Database
+2022-03-07 21:27:06,099 - Extracted result and saved them to the SQL-Database
+2022-03-07 21:27:06,866 - Plotted the matching functions result
+2022-03-07 21:27:08,116 - Plotted the result
+2022-03-07 21:27:08,116 - The Python Assignment program finished without errors!

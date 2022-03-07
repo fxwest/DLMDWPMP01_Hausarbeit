@@ -1,3 +1,6 @@
+"""
+This file contains all dataset classes and the corresponding methods.
+"""
 # --- Import
 import pathlib
 import bokeh.palettes
@@ -47,11 +50,12 @@ class Dataset:
             Returns a Pandas dataframe of the dataset.
         """
         try:
-            if not engine.has_table(table_name):                                # If table does not exist, create one
+            if not engine.has_table(table_name):                                # If table does not exist
                 log.info(f'Table {table_name} does not exists, creating one.')
-                csv_dataset = self.load_csv(file_path)                          # Load dataset from csv file
-                csv_dataset.to_sql(table_name, engine, index=False)
-
+            else:
+                log.info(f'Table {table_name} already exists, overwriting.')
+            csv_dataset = self.load_csv(file_path)                              # Load dataset from csv file
+            csv_dataset.to_sql(table_name, engine, index=False, if_exists='replace')
             dataframe = pd.read_sql_table(table_name, con=engine)
 
         except Exception as ex:
@@ -425,9 +429,9 @@ class Test(Dataset):
             print(result)
             return result
 
-    def plot_results(self, plot_file, best_fit, ideal_dataset):
+    def plot_matching_functions(self, plot_file, best_fit, ideal_dataset):
         """
-        Plot the results.
+        Plot the matching best fitting ideal functions and the test dataset.
         :param plot_file:
             The path for the Bokeh output plot file.
         :param best_fit:
@@ -435,24 +439,76 @@ class Test(Dataset):
         :param ideal_dataset:
             The ideal dataset class.
         """
-        output_file(plot_file)                                  # Define output file
-        plot = figure(width=1000, height=800, title="Matching Functions Results", x_axis_label="X Axis", y_axis_label="Y Axis")
+        try:
+            # TODO: Hier überprüfen, ob matching functions ausgeführt wurde, wenn nicht -> Eigene Exception
+            output_file(plot_file)                                  # Define output file
+            plot = figure(width=1000, height=800, title="Matching Functions Results", x_axis_label="X Axis", y_axis_label="Y Axis")
 
-        # Plot Testdata
-        plot.circle(self.dataset['x'], self.dataset['y'], size=5, alpha=0.5, legend_label="Test Data", color="black")
+            # Plot Testdata
+            plot.circle(self.dataset['x'], self.dataset['y'], size=5, alpha=0.5, legend_label="Test Data", color="black")
 
-        # Plot best fitting ideal functions
-        colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
-        for idx in range(0, len(best_fit.index)):
-            plot.line(ideal_dataset.dataset['x'], ideal_dataset.dataset[f"y{best_fit.loc[idx, 'Idx Ideal Function']}"],
-                      legend_label=f"y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
+            # Plot best fitting ideal functions
+            colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
+            for idx in range(0, len(best_fit.index)):
+                plot.line(ideal_dataset.dataset['x'], ideal_dataset.dataset[f"y{best_fit.loc[idx, 'Idx Ideal Function']}"],
+                          legend_label=f"Ideal y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
 
-        # Plot matching test data of the best fitting ideal functions
-        colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
-        for idx in range(0, len(best_fit.index)):
-            fitting_bool_array = self.matching_result[f"Match Ideal Function y{best_fit.loc[idx, 'Idx Ideal Function']}"]       # bool array for matching functions
-            x_values = self.matching_result.loc[fitting_bool_array, "Test x"]
-            y_values = self.matching_result.loc[fitting_bool_array, "Test y"]
-            plot.circle(x_values, y_values, size=7, legend_label=f"Test Data fits y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
+            # Plot matching test data of the best fitting ideal functions
+            colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
+            for idx in range(0, len(best_fit.index)):               # Iterate over rows of best fit dataframe (len=number of selected ideal functions)
+                fitting_bool_array = self.matching_result[f"Match Ideal Function y{best_fit.loc[idx, 'Idx Ideal Function']}"]       # bool array for matching functions
+                x_values = self.matching_result.loc[fitting_bool_array, "Test x"]
+                y_values = self.matching_result.loc[fitting_bool_array, "Test y"]
+                plot.circle(x_values, y_values, size=7, legend_label=f"Test Data fits y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
 
-        show(plot)
+            show(plot)
+
+        except Exception as ex:
+            log.error("The following error occurred while plotting the matching functions result: \n", ex)
+
+        else:
+            log.info("Plotted the matching functions result")
+
+    def plot_result(self, plot_file, best_fit, ideal_dataset):
+        """
+        Plot the result (best fitting ideal functions with corresponding test dataset points) with error bands.
+        :param plot_file:
+            The path for the Bokeh output plot file.
+        :param best_fit:
+            A Pandas dataframe containing RMSE, R2, best fitting ideal function, ...
+        :param ideal_dataset:
+            The ideal dataset class.
+        """
+        try:
+            # TODO: Hier überprüfen, ob get results ausgeführt wurde, wenn nicht -> Eigene Exception
+            output_file(plot_file)                                                                              # Define output file
+            plot = figure(width=1000, height=800, title="Result", x_axis_label="X Axis",
+                          y_axis_label="Y Axis")
+
+            # Plot best fitting ideal functions with error band
+            colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
+            for idx in range(0, len(best_fit.index)):               # Iterate over rows of best fit dataframe (len=number of selected ideal functions)
+                x = ideal_dataset.dataset['x']
+                y = ideal_dataset.dataset[f"y{best_fit.loc[idx, 'Idx Ideal Function']}"]
+                deviation = best_fit.loc[idx, "Max Deviation"] * np.sqrt(2)
+                lower_y = y - deviation
+                upper_y = y + deviation
+                color = next(colors)
+                plot.line(x, y, legend_label=f"Ideal y{best_fit.loc[idx, 'Idx Ideal Function']}", color=color)
+                plot.varea(x=x, y1=lower_y, y2=upper_y, alpha=0.5, color=color)                                 # plot error band
+
+            # Plot matching test data of the best fitting ideal functions
+            colors = itertools.cycle(bokeh.palettes.Category20_20)  # Get endless color iterator
+            for idx in range(0, len(best_fit.index)):
+                fitting_bool_array = self.matching_result[f"Match Ideal Function y{best_fit.loc[idx, 'Idx Ideal Function']}"]       # bool array for matching functions
+                x_values = self.matching_result.loc[fitting_bool_array, "Test x"]
+                y_values = self.matching_result.loc[fitting_bool_array, "Test y"]
+                plot.circle(x_values, y_values, size=7, legend_label=f"Test Data fits y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
+
+            show(plot)
+
+        except Exception as ex:
+            log.error("The following error occurred while plotting the result: \n", ex)
+
+        else:
+            log.info("Plotted the result")
