@@ -7,10 +7,10 @@ import bokeh.palettes
 import pandas as pd
 import logging as log
 import numpy as np
+import Exceptions as exc
 import itertools
 from pathlib import Path
 from bokeh.plotting import figure, output_file, show
-from Exceptions import RowCountMismatchError
 
 
 # --- DATASET BASE CLASS ---
@@ -155,7 +155,7 @@ class Training(Dataset):
         """
         try:
             if self.n_rows != ideal_dataset.n_rows:
-                raise RowCountMismatchError
+                raise exc.RowCountMismatchError
 
             for col_train in self.dataset.iloc[:, 1:self.n_cols]:                           # Iterate over y-dimension (columns) of the train dataset
                 y_train = self.dataset[col_train]                                           # Select current y value from train dataset
@@ -172,8 +172,9 @@ class Training(Dataset):
             self.rmse.index += 1                                                            # Index start from 1
             self.rmse.to_sql("rmse_train_ideal", engine, index=False, if_exists='replace')  # Save rmse as table in SQL-Database
 
-        except RowCountMismatchError:                                                       # TODO Unit-Test
-            log.error(RowCountMismatchError().error_msg)
+        except exc.RowCountMismatchError:                                                       # TODO Unit-Test
+            log.error(exc.RowCountMismatchError().error_msg)
+            quit()
 
         except Exception as ex:
             log.error("The following error occurred while calculating the RMSE: \n", ex)
@@ -194,7 +195,7 @@ class Training(Dataset):
         """
         try:
             if self.n_rows != ideal_dataset.n_rows:
-                raise RowCountMismatchError
+                raise exc.RowCountMismatchError
 
             for col_train in self.dataset.iloc[:, 1:self.n_cols]:                           # Iterate over y-dimension (columns) of the train dataset
                 y_train = self.dataset[col_train]                                           # Select current y value from train dataset
@@ -215,8 +216,9 @@ class Training(Dataset):
             self.r2.index += 1                                                              # Index start from 1
             self.r2.to_sql("r2_train_ideal", engine, index=False, if_exists='replace')      # Save r2 as table in SQL-Database
 
-        except RowCountMismatchError:                                                       # TODO Unit-Test
-            log.error(RowCountMismatchError().error_msg)
+        except exc.RowCountMismatchError:                                                       # TODO Unit-Test
+            log.error(exc.RowCountMismatchError().error_msg)
+            quit()
 
         except Exception as ex:
             log.error("The following error occurred while calculating the R-Squared Value: \n", ex)
@@ -236,7 +238,7 @@ class Training(Dataset):
         """
         try:
             if self.n_rows != ideal_dataset.n_rows:
-                raise RowCountMismatchError
+                raise exc.RowCountMismatchError
 
             for col_train in self.dataset.iloc[:, 1:self.n_cols]:                                               # Iterate over y-dimension (columns) of the train dataset
                 y_train = self.dataset[col_train]                                                               # Select current y value from train dataset
@@ -250,8 +252,9 @@ class Training(Dataset):
             self.least_square.index += 1                                                                        # Index start from 1
             self.least_square.to_sql("sum_of_squares_train_ideal", engine, index=False, if_exists='replace')    # Save least_square as table in SQL-Database
 
-        except RowCountMismatchError:                                                       # TODO Unit-Test
-            log.error(RowCountMismatchError().error_msg)
+        except exc.RowCountMismatchError:                                                       # TODO Unit-Test
+            log.error(exc.RowCountMismatchError().error_msg)
+            quit()
 
         except Exception as ex:
             log.error("The following error occurred while calculating the Least Square Value: \n", ex)
@@ -291,7 +294,9 @@ class Training(Dataset):
             The path for the Bokeh output plot file.
         """
         try:
-            # TODO: Hier überprüfen, ob least square ausgeführt wurde, wenn nicht -> Eigene Exception
+            if self.least_square.empty:
+                raise exc.EmptyLeastSquareError
+
             best_fit_list = []
             for col_train in self.least_square.iloc[:, 0:len(self.least_square.columns)]:                                                   # Iterate over yTrain-dimension (columns) of the Least Square results
                 array = self.least_square[col_train].to_numpy()                                                                             # Transform dataframe to numpy array
@@ -312,6 +317,10 @@ class Training(Dataset):
             for best_fit in best_fit_list:
                 plot.line(ideal_dataset.dataset['x'], ideal_dataset.dataset[f"y{best_fit[1]}"], legend_label=f"y{best_fit[1]}", color=next(colors))
             show(plot)
+
+        except exc.EmptyLeastSquareError:                                                       # TODO Unit-Test
+            log.error(exc.EmptyLeastSquareError().error_msg)
+            quit()
 
         except Exception as ex:
             log.error("The following error occurred while finding the best fitting functions: \n", ex)
@@ -356,7 +365,9 @@ class Test(Dataset):
             Matching functions are saved in self.matching_result.
         """
         try:
-            # TODO: Hier überprüfen, ob best fit ausgeführt wurde, wenn nicht -> Eigene Exception
+            if best_fit.empty:
+                raise exc.EmptyBestFitError
+
             self.dataset = self.dataset.sort_values("x")                        # Sort test dataset by x values
             self.dataset = self.dataset.reset_index(drop=True)                  # Reset indexes
             self.matching_result["Test x"] = self.dataset["x"]                  # Adding Column of Test x values to result dataframe
@@ -384,6 +395,10 @@ class Test(Dataset):
                         self.matching_result.at[row_test, f"Deviation Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = y_deviation
             self.matching_result.to_sql("matching_ideal_functions", engine, index=False, if_exists='replace')  # Save best fits as table in SQL-Database
 
+        except exc.EmptyBestFitError:                                                       # TODO Unit-Test
+            log.error(exc.EmptyBestFitError().error_msg)
+            quit()
+
         except Exception as ex:
             log.error("The following error occurred while getting matching functions for the test dataset: \n", ex)
 
@@ -401,8 +416,10 @@ class Test(Dataset):
         :return:
             Returns a pandas dataframe containing the result.
         """
-        # TODO: Hier überprüfen, ob matching functions ausgeführt wurde, wenn nicht -> Eigene Exception
         try:
+            if self.matching_result.empty:
+                raise exc.EmptyMatchingResultError
+
             result_list = []
             for row in range(0, len(self.matching_result.index)):                                                       # Iterate over rows of matching results (x-dim of test)
                 ideal_functions_match = []
@@ -419,6 +436,10 @@ class Test(Dataset):
                     result_list.append([x_test, y_test, str(ideal_functions_deviation), str(ideal_functions_match)])    # ideal casted to string, to save to values in SQl-Database (dataset with multiple fits)
             result = pd.DataFrame(result_list, columns=["Test x", "Test y", "Delta y", "Ideal Function"])               # Save result list as pandas dataframe
             result.to_sql("result", engine, index=False, if_exists='replace')                                           # Save result as table in SQL-Database
+
+        except exc.EmptyMatchingResultError:                                                       # TODO Unit-Test
+            log.error(exc.EmptyMatchingResultError().error_msg)
+            quit()
 
         except Exception as ex:
             log.error("The following error occurred while getting the result: \n", ex)
@@ -440,7 +461,9 @@ class Test(Dataset):
             The ideal dataset class.
         """
         try:
-            # TODO: Hier überprüfen, ob matching functions ausgeführt wurde, wenn nicht -> Eigene Exception
+            if self.matching_result.empty:
+                raise exc.EmptyMatchingResultError
+
             output_file(plot_file)                                  # Define output file
             plot = figure(width=1000, height=800, title="Matching Functions Results", x_axis_label="X Axis", y_axis_label="Y Axis")
 
@@ -463,6 +486,10 @@ class Test(Dataset):
 
             show(plot)
 
+        except exc.EmptyMatchingResultError:                                                       # TODO Unit-Test
+            log.error(exc.EmptyMatchingResultError().error_msg)
+            quit()
+
         except Exception as ex:
             log.error("The following error occurred while plotting the matching functions result: \n", ex)
 
@@ -480,7 +507,9 @@ class Test(Dataset):
             The ideal dataset class.
         """
         try:
-            # TODO: Hier überprüfen, ob get results ausgeführt wurde, wenn nicht -> Eigene Exception
+            if self.matching_result.empty:
+                raise exc.EmptyMatchingResultError
+
             output_file(plot_file)                                                                              # Define output file
             plot = figure(width=1000, height=800, title="Result", x_axis_label="X Axis",
                           y_axis_label="Y Axis")
@@ -506,6 +535,10 @@ class Test(Dataset):
                 plot.circle(x_values, y_values, size=7, legend_label=f"Test Data fits y{best_fit.loc[idx, 'Idx Ideal Function']}", color=next(colors))
 
             show(plot)
+
+        except exc.EmptyMatchingResultError:                                                       # TODO Unit-Test
+            log.error(exc.EmptyMatchingResultError().error_msg)
+            quit()
 
         except Exception as ex:
             log.error("The following error occurred while plotting the result: \n", ex)
