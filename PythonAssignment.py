@@ -52,7 +52,8 @@ def main():
     training_dataset.calculate_rsquare(ideal_dataset, engine)
     training_dataset.calculate_least_square(ideal_dataset, engine)
     training_dataset.select_best_fit(ideal_dataset, engine, best_fit_plot_file)
-    test_dataset.get_matching_functions(training_dataset.best_fit, ideal_dataset, engine)
+    test_dataset.matching_functions(training_dataset.best_fit, ideal_dataset, engine)
+    result = test_dataset.get_result(training_dataset.best_fit, engine)
     test_dataset.plot_results(results_plot_file, training_dataset.best_fit, ideal_dataset)
 
 # except Exception as ex:

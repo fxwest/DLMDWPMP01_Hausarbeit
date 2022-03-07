@@ -335,9 +335,10 @@ class Test(Dataset):
     def __init__(self, test_file_path, test_plot_file,  engine):
         self.dataset_name = "Test Dataset"
         self.matching_result = pd.DataFrame()
+        self.result = pd.DataFrame()
         Dataset.__init__(self, test_file_path, test_plot_file, engine)          # Call init of base class
 
-    def get_matching_functions(self, best_fit, ideal_dataset, engine):
+    def matching_functions(self, best_fit, ideal_dataset, engine):
         """
         Iterate through the test dataset and check if one of the selected best fit ideal functions is below the threshold factor of sqrt(2).
         Map the test data point to fitting functions from the best fit ideal functions dataframe.
@@ -385,6 +386,44 @@ class Test(Dataset):
         else:
             log.info("Determined matching functions and saved results to SQL-Database")
             print(self.matching_result)
+
+    def get_result(self, best_fit, engine):
+        """
+        Extract the test datapoints with a matching best fitting ideal function.
+        :param best_fit:
+            A Pandas dataframe containing RMSE, R2, best fitting ideal function, ...
+        :param engine:
+            The SQL engine.
+        :return:
+            Returns a pandas dataframe containing the result.
+        """
+        # TODO: Hier überprüfen, ob matching functions ausgeführt wurde, wenn nicht -> Eigene Exception
+        try:
+            result_list = []
+            for row in range(0, len(self.matching_result.index)):                                                       # Iterate over rows of matching results (x-dim of test)
+                ideal_functions_match = []
+                ideal_functions_deviation = []
+                for row_best_fit in range(0, len(best_fit.index)):                                                      # Iterate over rows of best fit dataframe (len=number of selected ideal functions)
+                    ideal_function_col = f"Match Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"    # Name of the column of the ideal function
+                    if self.matching_result.loc[row, ideal_function_col]:                                               # If matching function exist (true)
+                        ideal_functions_match.append(best_fit.loc[row_best_fit, 'Idx Ideal Function'])
+                        ideal_functions_deviation.append(self.matching_result.loc[row,
+                                f"Deviation Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"])
+                if len(ideal_functions_match) > 0:
+                    x_test = self.matching_result.loc[row, "Test x"]                                                    # Current x value from test dataset
+                    y_test = self.matching_result.loc[row, "Test y"]                                                    # Current x value from test dataset
+                    result_list.append([x_test, y_test, str(ideal_functions_deviation), str(ideal_functions_match)])    # ideal casted to string, to save to values in SQl-Database (dataset with multiple fits)
+            result = pd.DataFrame(result_list, columns=["Test x", "Test y", "Delta y", "Ideal Function"])               # Save result list as pandas dataframe
+            result.to_sql("result", engine, index=False, if_exists='replace')                                           # Save result as table in SQL-Database
+
+        except Exception as ex:
+            log.error("The following error occurred while getting the result: \n", ex)
+
+        else:
+            log.info("Extracted result and saved them to the SQL-Database")
+            self.result = result
+            print(result)
+            return result
 
     def plot_results(self, plot_file, best_fit, ideal_dataset):
         """
