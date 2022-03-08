@@ -172,7 +172,7 @@ class Training(Dataset):
             self.rmse.index += 1                                                            # Index start from 1
             self.rmse.to_sql("rmse_train_ideal", engine, index=False, if_exists='replace')  # Save rmse as table in SQL-Database
 
-        except exc.RowCountMismatchError:                                                       # TODO Unit-Test
+        except exc.RowCountMismatchError:
             log.error(exc.RowCountMismatchError().error_msg)
             quit()
 
@@ -216,7 +216,7 @@ class Training(Dataset):
             self.r2.index += 1                                                              # Index start from 1
             self.r2.to_sql("r2_train_ideal", engine, index=False, if_exists='replace')      # Save r2 as table in SQL-Database
 
-        except exc.RowCountMismatchError:                                                       # TODO Unit-Test
+        except exc.RowCountMismatchError:
             log.error(exc.RowCountMismatchError().error_msg)
             quit()
 
@@ -252,7 +252,7 @@ class Training(Dataset):
             self.least_square.index += 1                                                                        # Index start from 1
             self.least_square.to_sql("sum_of_squares_train_ideal", engine, index=False, if_exists='replace')    # Save least_square as table in SQL-Database
 
-        except exc.RowCountMismatchError:                                                       # TODO Unit-Test
+        except exc.RowCountMismatchError:
             log.error(exc.RowCountMismatchError().error_msg)
             quit()
 
@@ -318,7 +318,7 @@ class Training(Dataset):
                 plot.line(ideal_dataset.dataset['x'], ideal_dataset.dataset[f"y{best_fit[1]}"], legend_label=f"y{best_fit[1]}", color=next(colors))
             show(plot)
 
-        except exc.EmptyLeastSquareError:                                                       # TODO Unit-Test
+        except exc.EmptyLeastSquareError:
             log.error(exc.EmptyLeastSquareError().error_msg)
             quit()
 
@@ -395,7 +395,7 @@ class Test(Dataset):
                         self.matching_result.at[row_test, f"Deviation Ideal Function y{best_fit.loc[row_best_fit, 'Idx Ideal Function']}"] = y_deviation
             self.matching_result.to_sql("matching_ideal_functions", engine, index=False, if_exists='replace')  # Save best fits as table in SQL-Database
 
-        except exc.EmptyBestFitError:                                                       # TODO Unit-Test
+        except exc.EmptyBestFitError:
             log.error(exc.EmptyBestFitError().error_msg)
             quit()
 
@@ -437,7 +437,7 @@ class Test(Dataset):
             result = pd.DataFrame(result_list, columns=["Test x", "Test y", "Delta y", "Ideal Function"])               # Save result list as pandas dataframe
             result.to_sql("result", engine, index=False, if_exists='replace')                                           # Save result as table in SQL-Database
 
-        except exc.EmptyMatchingResultError:                                                       # TODO Unit-Test
+        except exc.EmptyMatchingResultError:
             log.error(exc.EmptyMatchingResultError().error_msg)
             quit()
 
@@ -486,7 +486,7 @@ class Test(Dataset):
 
             show(plot)
 
-        except exc.EmptyMatchingResultError:                                                       # TODO Unit-Test
+        except exc.EmptyMatchingResultError:
             log.error(exc.EmptyMatchingResultError().error_msg)
             quit()
 
@@ -536,7 +536,7 @@ class Test(Dataset):
 
             show(plot)
 
-        except exc.EmptyMatchingResultError:                                                       # TODO Unit-Test
+        except exc.EmptyMatchingResultError:                                                       
             log.error(exc.EmptyMatchingResultError().error_msg)
             quit()
 
