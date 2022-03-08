@@ -536,7 +536,7 @@ class Test(Dataset):
 
             show(plot)
 
-        except exc.EmptyMatchingResultError:                                                       
+        except exc.EmptyMatchingResultError:
             log.error(exc.EmptyMatchingResultError().error_msg)
             quit()
 
